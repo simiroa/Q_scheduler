@@ -1,0 +1,160 @@
+.memo-input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.memo-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
+}
+
+.memo-input::placeholder {
+    color: var(--text-muted);
+}
+
+.memo-indicator {
+    position: absolute;
+    right: 36px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.memo-indicator:hover {
+    opacity: 1;
+}
+
+.memo-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-menu);
+    border: 1px solid var(--border-hover);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    max-width: 250px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 3000;
+    display: none;
+}
+
+.task-bar:hover .memo-tooltip,
+.event-marker:hover .memo-tooltip {
+    display: block;
+}
+
+.memo-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    width: 0;
+    min-width: 0;
+    background: var(--bg-sidebar);
+    border-left: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.3s ease, min-width 0.3s ease;
+}
+
+.memo-panel.open {
+    width: 320px;
+    min-width: 320px;
+}
+
+.memo-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.memo-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.memo-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.memo-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.memo-panel-info {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(94, 106, 210, 0.08);
+}
+
+.memo-task-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent-secondary);
+}
+
+.memo-panel-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.memo-panel-textarea {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    line-height: 1.6;
+}
+
+.memo-panel-textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
+}
+
+.memo-panel-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.memo-panel-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: flex-end;
+}

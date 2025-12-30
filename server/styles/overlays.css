@@ -1,0 +1,54 @@
+.context-menu {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg-menu);
+    border: 1px solid var(--border-hover);
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    min-width: 160px;
+    backdrop-filter: blur(10px);
+}
+
+.menu-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.menu-item:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.selection-box {
+    position: fixed;
+    border: 2px solid var(--accent-primary, #5e6ad2);
+    background: rgba(94, 106, 210, 0.15);
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+}
+
+.snap-guide-line {
+    position: fixed;
+    width: 2px;
+    background: #ef4444;
+    pointer-events: none;
+    z-index: 9998;
+    display: none;
+}
+
+#selectionBox {
+    display: none;
+    position: fixed;
+    border: 1px solid var(--accent-primary);
+    background-color: rgba(94, 106, 210, 0.2);
+    z-index: 9999;
+    pointer-events: none;
+}

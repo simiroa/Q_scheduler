@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# User Data (Important to exclude)
+server/list/
+server/schedule.json
+server/server_port.txt
+server_debug.log
+
+# VSCode
+.vscode/
+
+# System
+Thumbs.db
+Desktop.ini

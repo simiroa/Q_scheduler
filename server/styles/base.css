@@ -1,0 +1,125 @@
+:root {
+    /* Light Theme Palette */
+    --bg-app: #ffffff;
+    --bg-sidebar: #f8fafc;
+    --bg-header: rgba(255, 255, 255, 0.95);
+    --bg-timeline: #ffffff;
+    --bg-menu: #ffffff;
+    --bg-secondary: #f1f5f9;
+    /* Added for controls */
+    --bg-tertiary: #e2e8f0;
+    /* Added for panels */
+
+    --border-subtle: #e2e8f0;
+    --border-hover: #cbd5e1;
+
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --text-danger: #ef4444;
+
+    --accent-primary: #5e6ad2;
+    --accent-secondary: #26b5ce;
+
+    --timeline-cell-width: 60px;
+    --header-height: 80px;
+    --subheader-height: 40px;
+    --sidebar-width: 280px;
+    --row-height: 44px;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body.dark-theme {
+    /* Dark Theme Palette */
+    --bg-app: #1a1d25;
+    --bg-sidebar: #15181e;
+    --bg-header: rgba(26, 29, 37, 0.95);
+    --bg-timeline: #1a1d25;
+    --bg-menu: #242731;
+    --bg-secondary: #2a2e39;
+    --bg-tertiary: #374151;
+
+    --border-subtle: #374151;
+    --border-hover: #4b5563;
+
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom Scrollbar for Dark Theme */
+body.dark-theme ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+body.dark-theme ::-webkit-scrollbar-track {
+    background: var(--bg-sidebar);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 5px;
+    border: 2px solid var(--bg-sidebar);
+    /* Padding effect */
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+body.dark-theme ::-webkit-scrollbar-corner {
+    background: var(--bg-sidebar);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    font-size: 14px;
+    user-select: none;
+    /* Prevent text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.app-container {
+    display: flex;
+    height: 100%;
+}
+
+@keyframes flash-border {
+    0% {
+        border-right: 1px solid var(--accent-secondary);
+    }
+
+    100% {
+        border-right: 1px solid var(--border-subtle);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Scheduler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/overlays.css">
+    <link rel="stylesheet" href="styles/memo.css">
+    <link rel="stylesheet" href="styles/settings.css">
+    <link rel="icon" href="https://fav.farm/📅" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=12">
+    <style>
+        .version-tag {
+            font-size: 10px;
+            background: #5e6ad2;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: normal;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body style="user-select: none !important; -webkit-user-select: none !important;">
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                Quantum <span>Scheduler</span>
+                <span class="version-tag">v8.27</span>
+                <span id="connectionDot" class="conn-dot" title="연결 확인 중..."></span>
+            </div>
+            <div class="task-list-header">
+                <span>PROJECTS</span>
+            </div>
+
+            <div class="sidebar-scroll-area" id="sidebarScrollArea">
+                <div class="task-list" id="sidebarList"></div>
+                <button class="add-task-btn" id="addProjectBtn">
+                    <span class="material-icons" style="font-size: 18px;">add</span> Add Project
+                </button>
+            </div>
+            <div class="sidebar-footer">
+                <div class="list-management">
+                    <div class="list-head">
+                        <span class="panel-title">ARCHIVE</span>
+                        <span class="status-dot" id="statusDot" title="저장 상태"></span>
+                    </div>
+                    <div class="list-row">
+                        <div class="list-select">
+                            <span class="material-icons">folder</span>
+                            <select id="projectSelect" class="project-dropdown">
+                                <option value="">-- 선택하세요 --</option>
+                            </select>
+                        </div>
+                        <button class="icon-btn" id="settingsBtn" title="설정">
+                            <span class="material-icons">settings</span>
+                        </button>
+                    </div>
+                    <div class="list-actions">
+                        <div class="action-group">
+                            <button id="newBtn" class="icon-btn" title="아카이브 추가">
+                                <span class="material-icons">add_box</span>
+                            </button>
+                            <button id="renameProjectBtn" class="icon-btn" title="이름 변경">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button id="deleteProjectBtn" class="icon-btn danger" title="삭제">
+                                <span class="material-icons">delete_outline</span>
+                            </button>
+                            <button id="lockProjectBtn" class="icon-btn" title="잠금 설정">
+                                <span class="material-icons">lock_open</span>
+                            </button>
+                        </div>
+                        <div class="action-group action-group--secondary">
+                            <button id="undoBtn" class="icon-btn" title="Undo">
+                                <span class="material-icons">undo</span>
+                            </button>
+                            <button id="redoBtn" class="icon-btn" title="Redo">
+                                <span class="material-icons">redo</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+
+        <!-- Main Content -->
+        <main class="timeline-main">
+            <!-- Header -->
+            <header class="timeline-header-container" id="timelineHeader">
+                <div class="timeline-header-scroll" id="headerScrollContent"></div>
+            </header>
+            <div class="timeline-subheader-spacer"></div>
+
+            <!-- Timeline Body -->
+            <div class="timeline-body" id="timelineBody">
+                <div class="timeline-grid" id="timelineGrid">
+                    <div class="grid-lines" id="gridLines"></div>
+                    <div class="timeline-rows" id="timelineRows"></div>
+                    <div class="now-marker" id="nowMarker"></div>
+                </div>
+                <div class="task-layer" id="taskLayer"></div>
+                <div class="event-layer" id="eventLayer"></div>
+                <div class="snap-guide-line" id="snapGuideLine"></div>
+                <!-- Selection Box -->
+                <div id="selectionBox" class="selection-box"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Right Side Memo Panel -->
+    <aside class="memo-panel" id="memoPanel">
+        <div class="memo-panel-header">
+            <span class="memo-title"><span class="material-icons"
+                    style="font-size: 18px; vertical-align: middle; margin-right: 4px;">description</span>메모</span>
+            <button class="memo-close-btn" id="memoPanelClose"><span class="material-icons">close</span></button>
+        </div>
+        <div class="memo-panel-info" id="memoPanelInfo">
+            <span class="memo-task-name" id="memoTaskName">작업 선택</span>
+        </div>
+        <div class="memo-panel-body">
+            <textarea id="memoPanelInput" class="memo-panel-textarea" placeholder="메모를 입력하세요..."></textarea>
+        </div>
+        <div class="memo-panel-footer">
+            <button class="modal-btn confirm" id="memoPanelSave"><span class="material-icons"
+                    style="font-size: 18px; vertical-align: middle; margin-right: 4px;">save</span>저장</button>
+        </div>
+    </aside>
+
+    <!-- Modals -->
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="header-title">
+                    <span class="header-icon"><span class="material-icons">event</span></span>
+                    <h3>Edit Item</h3>
+                </div>
+                <button class="close-icon-btn" id="editCloseX"><span class="material-icons">close</span></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-group">
+                    <label>Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="editNameInput" class="modal-input" placeholder="Name">
+                        <span class="input-icon"><span class="material-icons"
+                                style="font-size: 18px;">edit</span></span>
+                    </div>
+                </div>
+
+                <div class="modal-group">
+                    <label>Schedule</label>
+                    <div class="date-row" style="display: flex; gap: 10px; margin-bottom: 8px;">
+                        <div class="input-wrapper" style="flex:1">
+                            <input type="date" id="editStartDateInput" class="modal-input">
+                        </div>
+                        <div class="input-wrapper" style="flex:1">
+                            <input type="date" id="editEndDateInput" class="modal-input">
+                        </div>
+                    </div>
+                    <div class="duration-display" id="editDurationDisplay">
+                        <!-- JS Generated -->
+                    </div>
+                    <input type="hidden" id="editDurationInput">
+                </div>
+
+                <div class="modal-group">
+                    <label>Color</label>
+                    <div class="color-picker-container">
+                        <div class="color-options" id="editColorOptions">
+                            <!-- JS Generated -->
+                        </div>
+                        <button class="add-color-btn" id="editCustomColorBtn" title="Custom Color">+</button>
+                        <input type="color" id="editColorInput" class="hidden-color-input">
+                    </div>
+                </div>
+
+                <div class="modal-group">
+                    <label>Memo</label>
+                    <div class="input-wrapper">
+                        <textarea id="editMemoInput" class="modal-input" placeholder="Add a memo..." rows="3"
+                            style="resize: vertical; min-height: 80px;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="editCancelBtn" class="modal-btn secondary">Cancel</button>
+                <button id="editSaveBtn" class="modal-btn primary"><span class="material-icons"
+                        style="font-size: 18px; vertical-align: middle; margin-right: 4px;">save</span>Save
+                    Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirm</h3>
+                <button class="close-icon-btn" id="confirmCloseX"><span class="material-icons">close</span></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" id="confirmCancelBtn">Cancel</button>
+                <button class="modal-btn confirm" id="confirmOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">
+                <h3><span class="material-icons" style="vertical-align: middle; margin-right: 6px;">settings</span>설정
+                </h3>
+                <button class="close-icon-btn" id="settingsCloseX"><span class="material-icons">close</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <button class="tab-btn active" data-tab="general">일반</button>
+                    <button class="tab-btn" data-tab="data">데이터 관리</button>
+                </div>
+
+                <div class="tab-content active" id="tab-general">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-label">다크 모드</span>
+                            <span class="setting-desc">어두운 테마 사용</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="settingDarkMode">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-label">윈도우 시작 시 실행</span>
+                            <span class="setting-desc">시스템 부팅 시 서버 백그라운드 실행</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="settingRunOnStartup">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-label">현재 화면 공유</span>
+                            <span class="setting-desc">타임라인을 이미지로 저장</span>
+                        </div>
+                        <button class="btn-secondary" id="settingShareScreen">
+                            <span class="material-icons">image</span> 이미지 저장
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-data">
+                    <!-- Backup Section -->
+                    <div class="setting-group">
+                        <h4>아카이브 백업 (JSON)</h4>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-label">전체 백업 데이터</span>
+                                <span class="setting-desc">프로젝트, 작업, 메모 등 모든 데이터를 저장합니다.</span>
+                            </div>
+                            <div class="button-row">
+                                <button class="btn-primary" id="settingExportJson">
+                                    <span class="material-icons">download</span> 내보내기 (.json)
+                                </button>
+                                <button class="btn-secondary" id="settingImportJson">
+                                    <span class="material-icons">upload</span> 가져오기
+                                </button>
+                                <input type="file" id="settingImportFile" accept=".json" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- External Sync Section -->
+                    <div class="setting-group">
+                        <h4>캘린더 연동 및 공휴일</h4>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-label">Google 캘린더 내보내기</span>
+                                <span class="setting-desc">iCal 형식(.ics)으로 일정을 내보냅니다.</span>
+                            </div>
+                            <button class="btn-secondary" id="settingExportGoogle">
+                                <span class="material-icons">calendar_today</span> 내보내기 (.ics)
+                            </button>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-label">한국 공휴일 불러오기</span>
+                                <span class="setting-desc">2024-2030년 주요 공휴일을 타임라인에 표시합니다.</span>
+                            </div>
+                            <button class="btn-secondary" id="settingFetchHolidays">
+                                <span class="material-icons">public</span> 공휴일 가져오기
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone Section -->
+                    <div class="setting-group danger-zone">
+                        <h4>위험 구역 (Danger Zone)</h4>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <span class="setting-label">모든 프로젝트 데이터 삭제</span>
+                                <span class="setting-desc">서버의 모든 프로젝트와 설정이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</span>
+                            </div>
+                            <button class="btn-danger" id="settingDeleteAll">
+                                <span class="material-icons">delete_forever</span> 모든 데이터 삭제
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menus -->
+    <div id="taskContextMenu" class="context-menu">
+        <div class="menu-item" id="ctxSetDates">
+            <span class="material-icons"
+                style="font-size: 16px; margin-right: 8px; color: var(--accent-primary);">event_note</span>일정 설정
+        </div>
+        <div class="menu-item" id="ctxMemo">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">description</span>메모
+        </div>
+        <div class="menu-item" id="ctxAddEvent">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px; color: #ef4444;">turned_in</span>이벤트
+            추가
+        </div>
+        <div class="menu-item" id="ctxSplit">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">content_cut</span>분할
+        </div>
+        <div class="menu-item" id="ctxMerge" style="display:none;">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">link</span>병합
+        </div>
+        <div class="menu-item" id="ctxToggleWeekend">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">weekend</span>주말 포함 토글
+        </div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" id="ctxToday">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">today</span>Today
+        </div>
+    </div>
+
+    <div id="sidebarContextMenu" class="context-menu">
+        <div class="menu-item" id="ctxAddSubtask">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">subdirectory_arrow_right</span>하위
+            작업 추가
+        </div>
+        <div class="menu-item" id="ctxDeleteRow">
+            <span class="material-icons"
+                style="font-size: 16px; margin-right: 8px; color: var(--accent-danger);">delete_outline</span>삭제
+        </div>
+    </div>
+    <div id="headerContextMenu" class="context-menu">
+        <div class="menu-item" id="ctxToggleHoliday">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">flag</span>휴일 지정
+        </div>
+        <div class="menu-item" id="ctxHeaderToday">
+            <span class="material-icons" style="font-size: 16px; margin-right: 8px;">today</span>Today
+        </div>
+    </div>
+    </div>
+
+    <!-- Hidden Color Inputs -->
+    <input type="color" id="colorPicker" style="display:none;">
+    <input type="color" id="projectColorPicker" style="display:none;">
+
+    <!-- Context Menu Suppression (Inline) -->
+    <!-- Context Menu Suppression (Failsafe) -->
+    <script>
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        }, { capture: true });
+    </script>
+
+    <script type="module" src="script.js?v=8.28"></script>
+</body>
+
+</html>

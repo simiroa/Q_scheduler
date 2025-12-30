@@ -1,0 +1,428 @@
+.timeline-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+}
+
+.timeline-header-container {
+    height: var(--header-height);
+    background: var(--bg-app);
+    border-bottom: 1px solid var(--border-subtle);
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.timeline-subheader-spacer {
+    height: var(--subheader-height);
+    background: var(--bg-app);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.timeline-header-scroll {
+    display: flex;
+    height: 100%;
+    position: absolute;
+    left: 0;
+}
+
+.time-cell-day {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 10px;
+    flex-shrink: 0;
+    user-select: none;
+    cursor: pointer;
+    padding: 4px 2px;
+}
+
+.time-cell-day.today {
+    background: rgba(38, 181, 206, 0.1);
+}
+
+.time-cell-day.holiday {
+    background: rgba(239, 68, 68, 0.08);
+    /* Red tint for holiday header */
+}
+
+/* Also tint the grid column if possible, but grid-col rule might be elsewhere */
+
+.time-cell-day.today .day-number {
+    color: var(--accent-secondary);
+    font-weight: 700;
+}
+
+.time-cell-day.weekend .day-name,
+.time-cell-day.weekend .day-number,
+.time-cell-day.holiday .day-name,
+.time-cell-day.holiday .day-number,
+.time-cell-day.holiday .day-month {
+    color: var(--text-danger);
+}
+
+.day-year {
+    font-size: 8px;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.day-month {
+    font-size: 9px;
+    color: var(--text-muted);
+}
+
+.day-number {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.day-name {
+    font-size: 9px;
+}
+
+.timeline-body {
+    flex: 1;
+    overflow: scroll;
+    position: relative;
+    cursor: grab;
+    min-height: 0;
+}
+
+.timeline-body:active {
+    cursor: grabbing;
+}
+
+.timeline-grid {
+    position: relative;
+    padding-bottom: 150vh;
+    /* Substantially increased bottom space */
+    min-height: 2000px;
+    /* Ensure minimum height for "infinite" feel */
+    /* Allow scrolling content upward */
+}
+
+.grid-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.grid-col {
+    height: 100%;
+    border-right: 1px dashed rgba(42, 46, 57, 0.3);
+    flex-shrink: 0;
+}
+
+.grid-col.weekend {
+    background: rgba(255, 107, 107, 0.03);
+}
+
+.grid-col.holiday {
+    background: rgba(255, 107, 107, 0.08);
+}
+
+.timeline-rows {
+    position: relative;
+    z-index: 1;
+}
+
+.timeline-row {
+    height: var(--row-height);
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+}
+
+.timeline-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.timeline-row.drag-over-top {
+    box-shadow: inset 0 2px 0 var(--accent-primary);
+}
+
+.timeline-row.drag-over-bottom {
+    box-shadow: inset 0 -2px 0 var(--accent-primary);
+}
+
+.timeline-row.drag-over-center {
+    background: rgba(94, 106, 210, 0.12);
+    outline: 1px dashed var(--accent-primary);
+    outline-offset: -1px;
+}
+
+.timeline-drop-ghost {
+    position: absolute;
+    height: 2px;
+    left: 0;
+    right: 0;
+    background: rgba(94, 106, 210, 0.35);
+    box-shadow: 0 0 4px rgba(94, 106, 210, 0.3);
+    pointer-events: none;
+    display: none;
+    z-index: 4;
+}
+
+.mouse-guide-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(15, 23, 42, 0.08);
+    pointer-events: none;
+    display: none;
+    z-index: 2;
+}
+
+.task-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.task-bar {
+    position: absolute;
+    top: 8px;
+    height: 32px;
+    border-radius: 6px;
+    background: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0 10px;
+    color: white;
+    opacity: 0.9;
+    font-size: 11px;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    cursor: grab;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: visible;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.task-bar:hover {
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+    filter: brightness(1.1);
+}
+
+.task-bar.dragging {
+    cursor: grabbing;
+    opacity: 0.9;
+    z-index: 1000;
+}
+
+.task-bar.resizing {
+    cursor: ew-resize;
+    z-index: 1000;
+}
+
+.bar-label {
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    max-width: 200px;
+    padding: 8px 4px;
+    margin: -8px 0;
+    cursor: text;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.duration-badge {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 6px;
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.weekend-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.weekend-day-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.45);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    cursor: ew-resize;
+    z-index: 10;
+}
+
+.resize-handle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.resize-handle.left {
+    left: 0;
+}
+
+.resize-handle.right {
+    right: 0;
+}
+
+.now-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4757;
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(255, 71, 87, 0.4);
+}
+
+.task-bar.selected {
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 2px var(--accent-primary), 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+}
+
+.task-bar.collapsed-child {
+    pointer-events: none;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+}
+
+.event-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    /* Ensure above selected task bars (z-index 100) */
+    pointer-events: none;
+}
+
+.event-marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 2000;
+}
+
+.drag-ghost,
+.resize-ghost {
+    background: var(--accent-primary);
+    z-index: 1500;
+    opacity: 0.5;
+    pointer-events: none;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    border: 1px dashed rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.multi-drag-ghost {
+    opacity: 0.35;
+    background: rgba(94, 106, 210, 0.25);
+    box-shadow: none;
+    border: 1px dashed rgba(94, 106, 210, 0.35);
+    filter: saturate(0.8);
+}
+
+.event-marker.multi-drag-ghost {
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+}
+
+.event-marker.multi-drag-ghost .event-label {
+    opacity: 0.6;
+}
+
+.event-marker.multi-drag-ghost .diamond-inner {
+    opacity: 0.7;
+}
+
+.diamond-inner {
+    width: 100%;
+    height: 100%;
+    background: #ef4444;
+    transform: rotate(45deg);
+    border-radius: 2px;
+}
+
+.event-label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: 10px;
+    font-weight: 500;
+    color: #ef4444;
+    background: rgba(15, 15, 20, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    pointer-events: auto;
+    cursor: text;
+    z-index: 2001;
+}
+
+.event-marker:hover .diamond-inner {
+    transform: rotate(45deg) scale(1.3);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.8);
+}
+
+.event-marker.selected .diamond-inner {
+    background: var(--accent-primary);
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 2px var(--accent-primary);
+    transform: rotate(45deg) scale(1.2);
+}
