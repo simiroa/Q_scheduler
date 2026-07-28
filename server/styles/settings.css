@@ -249,10 +249,6 @@ body.dark-theme .settings-modal {
     color: var(--text-primary);
 }
 
-body.dark-theme .settings-rows {
-    background: transparent;
-}
-
 body.dark-theme .slider {
     background-color: var(--border-subtle);
 }

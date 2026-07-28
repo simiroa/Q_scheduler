@@ -148,29 +148,24 @@ Object.assign(Scheduler.prototype, {
     },
 
 
-    getAllSegments() {
-        const segs = [];
-        const collect = (nodes) => {
-            nodes.forEach(n => {
-                if (n.segments) n.segments.forEach(s => segs.push({ nodeId: n.id, seg: s }));
-                if (n.children) collect(n.children);
-            });
-        };
-        collect(this.data);
-        return segs;
+    // 로컬 날짜 기준 YYYY-MM-DD. toISOString()은 UTC로 변환하므로 KST(UTC+9)에서
+    // 하루 밀린 키가 나온다 — 공휴일 키가 전부 어긋나므로 절대 쓰지 말 것.
+    getDateKey(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     },
-
-
-    getDateKey(date) { return date.toISOString().split('T')[0]; },
     isHoliday(date) { return this.holidays.has(this.getDateKey(date)); },
     isWeekend(date) { const d = date.getDay(); return d === 0 || d === 6; },
     isNonWorkingDay(date) { return this.isWeekend(date) || this.isHoliday(date); },
 
 
     getWorkingDays(startOffset, duration, includeWeekends) {
-        // includeWeekends=true: count all days
-        // includeWeekends=false: count only working days (exclude weekends/holidays)
-        if (!includeWeekends) return duration; // If not including weekends overlay, just return duration
+        // 플래그 이름과 동작이 반대로 읽히니 주의 (기존 저장 데이터 호환 위해 이름 유지):
+        // includeWeekends=true  → 주말/휴일 오버레이를 그리고, 배지에는 실작업일만 센다
+        // includeWeekends=false → 오버레이 없이 전체 기간(duration)을 그대로 센다
+        if (!includeWeekends) return duration;
         let count = 0;
         for (let i = 0; i < duration; i++) {
             const d = new Date(this.config.startDate);

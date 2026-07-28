@@ -235,11 +235,6 @@
     z-index: 1000;
 }
 
-.task-bar.resizing {
-    cursor: ew-resize;
-    z-index: 1000;
-}
-
 .bar-label {
     position: relative;
     z-index: 10;
@@ -263,17 +258,6 @@
     margin-left: 6px;
     flex-shrink: 0;
     z-index: 2;
-}
-
-.weekend-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 6px;
-    pointer-events: none;
-    z-index: 1;
 }
 
 .weekend-day-overlay {

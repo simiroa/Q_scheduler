@@ -72,41 +72,11 @@ Object.assign(Scheduler.prototype, {
 
         const json = JSON.stringify(exportData, null, 2);
 
-        // Try File System Access API for path selection
-        if ('showSaveFilePicker' in window) {
-            try {
-                const date = new Date().toISOString().split('T')[0];
-                const fileHandle = await window.showSaveFilePicker({
-                    suggestedName: `schedule_${date}.json`,
-                    types: [{
-                        description: 'JSON Files',
-                        accept: { 'application/json': ['.json'] }
-                    }]
-                });
-
-                const writable = await fileHandle.createWritable();
-                await writable.write(json);
-                await writable.close();
-
-                // Remember this file for future saves
-                this.currentFileHandle = fileHandle;
-                this.updateCurrentFileInfo(fileHandle.name);
-
-                alert('파일이 저장되었습니다: ' + fileHandle.name);
-                return;
-            } catch (err) {
-                if (err.name === 'AbortError') return; // User cancelled
-                console.log('File picker failed, using download fallback');
-            }
-        }
-
-        // Fallback: download method
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const date = new Date().toISOString().split('T')[0];
-        a.download = `schedule_${date}.json`;
+        a.download = `schedule_${this.getDateKey(new Date())}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -150,10 +120,6 @@ Object.assign(Scheduler.prototype, {
                 }
 
                 this.renderTasks();
-
-                // Remember file name for display
-                this.currentFileName = file.name;
-                this.updateCurrentFileInfo(file.name);
 
                 alert('스케줄을 성공적으로 가져왔습니다!\n저장 버튼을 누르면 이 파일에 저장됩니다.');
 
@@ -308,20 +274,7 @@ Object.assign(Scheduler.prototype, {
         dot.classList.remove('pending', 'saving', 'saved');
         dot.classList.add(status);
 
-        switch (status) {
-            case 'pending':
-                dot.title = '저장 대기 중...';
-                break;
-            case 'saving':
-                dot.title = '저장 중...';
-                break;
-            case 'saved':
-                dot.title = '저장됨';
-                break;
-            case 'error':
-                dot.title = '저장 실패';
-                break;
-        }
+        dot.title = { pending: '저장 대기 중...', saving: '저장 중...', saved: '저장됨', error: '저장 실패' }[status] || '';
     },
 
 
@@ -463,333 +416,12 @@ Object.assign(Scheduler.prototype, {
         });
     },
 
-    // ========== File System Access API ==========
-    // IndexedDB helpers for storing directory handle
-    async openDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open('QuantumScheduler', 1);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => resolve(request.result);
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains('handles')) {
-                    db.createObjectStore('handles');
-                }
-            };
-        });
-    },
-
-
-    async saveDirectoryHandle(handle) {
-        const db = await this.openDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction('handles', 'readwrite');
-            tx.objectStore('handles').put(handle, 'directoryHandle');
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-        });
-    },
-
-
-    async loadDirectoryHandle() {
-        try {
-            const db = await this.openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('handles', 'readonly');
-                const request = tx.objectStore('handles').get('directoryHandle');
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        } catch (err) {
-            return null;
-        }
-    },
-
-    // Try to restore previously selected folder on startup
-
-    async restoreSavedFolder() {
-        try {
-            const handle = await this.loadDirectoryHandle();
-            if (!handle) return false;
-
-            // Verify permission
-            const permission = await handle.queryPermission({ mode: 'readwrite' });
-            if (permission === 'granted') {
-                this.directoryHandle = handle;
-                this.updateFolderButton(handle.name);
-                await this.loadFromFile();
-                return true;
-            }
-
-            // Request permission if not granted
-            const newPermission = await handle.requestPermission({ mode: 'readwrite' });
-            if (newPermission === 'granted') {
-                this.directoryHandle = handle;
-                this.updateFolderButton(handle.name);
-                await this.loadFromFile();
-                return true;
-            }
-        } catch (err) {
-            console.log('Could not restore folder:', err.message);
-        }
-        return false;
-    },
-
-
-    updateFolderButton(name) {
-        const folderBtn = document.getElementById('folderBtn');
-        if (folderBtn) {
-            folderBtn.textContent = `📁 ${name}`;
-            folderBtn.classList.add('selected');
-        }
-    },
-
-    // Pick a folder to save/load schedule.json
-
-    async pickFolder() {
-        try {
-            // Check if API is supported
-            if (!('showDirectoryPicker' in window)) {
-                alert('이 브라우저는 폴더 선택을 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
-                return;
-            }
-
-            this.directoryHandle = await window.showDirectoryPicker({
-                mode: 'readwrite'
-            });
-
-            this.updateFolderButton(this.directoryHandle.name);
-
-            // Save handle to IndexedDB for next session
-            await this.saveDirectoryHandle(this.directoryHandle);
-
-            console.log('Folder selected and saved:', this.directoryHandle.name);
-
-            // Try to load existing schedule.json from selected folder
-            this.loadFromFile();
-
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.error('Folder selection failed:', err);
-            }
-        }
-    },
-
-    // Save schedule to selected folder as schedule.json
-
-    async saveToFile() {
-        const saveData = {
-            version: '1.0',
-            saveDate: new Date().toISOString(),
-            startDate: this.config.startDate.toISOString(),
-            holidays: Array.from(this.holidays),
-            data: this.data
-        };
-
-        const saveBtn = document.getElementById('saveBtn');
-        const originalText = saveBtn ? saveBtn.innerHTML : '<span class="material-icons">save</span> 저장';
-
-        // If no folder selected, try to pick one
-        if (!this.directoryHandle) {
-            // Fallback to localStorage
-            try {
-                localStorage.setItem('quantumScheduler', JSON.stringify(saveData));
-                this.showSaveSuccess(saveBtn, originalText, '✅ 로컬 저장됨');
-                console.log('Saved to localStorage (no folder selected)');
-            } catch (e) {
-                alert('저장 실패: ' + e.message);
-            }
-            return;
-        }
-
-        try {
-            // Get file handle (create if not exists)
-            const fileHandle = await this.directoryHandle.getFileHandle('schedule.json', { create: true });
-
-            // Write to file
-            const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify(saveData, null, 2));
-            await writable.close();
-
-            this.showSaveSuccess(saveBtn, originalText, '✅ 파일 저장됨');
-            console.log('Saved to schedule.json in:', this.directoryHandle.name);
-
-        } catch (err) {
-            console.error('File save failed:', err);
-            // Fallback to localStorage
-            try {
-                localStorage.setItem('quantumScheduler', JSON.stringify(saveData));
-                this.showSaveSuccess(saveBtn, originalText, '✅ 로컬 저장됨');
-            } catch (e) {
-                alert('저장 실패: ' + err.message);
-            }
-        }
-    },
-
-    // Load schedule from selected folder's schedule.json
-
-    async loadFromFile() {
-        if (!this.directoryHandle) {
-            console.log('No folder selected, trying localStorage');
-            this.loadFromLocalStorage();
-            return;
-        }
-
-        try {
-            const fileHandle = await this.directoryHandle.getFileHandle('schedule.json');
-            const file = await fileHandle.getFile();
-            const text = await file.text();
-            const saveData = JSON.parse(text);
-
-            if (saveData.data && Array.isArray(saveData.data)) {
-                this.applyLoadedData(saveData);
-                console.log('Loaded from schedule.json in:', this.directoryHandle.name);
-
-                const loadBtn = document.getElementById('loadBtn');
-                if (loadBtn) {
-                    const originalText = loadBtn.textContent;
-                    loadBtn.textContent = '✅ 불러옴';
-                    setTimeout(() => { loadBtn.textContent = originalText; }, 1500);
-                }
-            }
-
-        } catch (err) {
-            if (err.name === 'NotFoundError') {
-                console.log('No schedule.json found in folder');
-            } else {
-                console.error('File load failed:', err);
-            }
-            // Fallback to localStorage
-            this.loadFromLocalStorage();
-        }
-    },
-
-    // Save schedule to server (or localStorage as fallback)
-
-    async saveToLocal() {
-        const saveData = {
-            version: '1.0',
-            saveDate: new Date().toISOString(),
-            startDate: this.config.startDate.toISOString(),
-            holidays: Array.from(this.holidays),
-            data: this.data
-        };
-
-        const saveBtn = document.getElementById('saveBtn');
-        const originalText = saveBtn ? saveBtn.textContent : '';
-
-        // Conflict check: fetch server data first
-        try {
-            const serverRes = await fetch('/api/schedule');
-            const serverData = await serverRes.json();
-
-            if (serverData.saveDate && this.lastServerSaveDate && serverData.saveDate > this.lastServerSaveDate) {
-                if (!confirm('서버에 더 최신 데이터가 있습니다. 덮어쓰시겠습니까?\n(취소를 누르면 서버 데이터를 불러오는 것을 권장합니다)')) {
-                    return;
-                }
-            }
-        } catch (e) {
-            console.log('Server unreachable for conflict check, continuing...');
-        }
-
-        fetch('/api/schedule', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(saveData)
-        })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    this.lastServerSaveDate = saveData.saveDate;
-                    this.showSaveSuccess(saveBtn, originalText, '✅ 서버 저장됨');
-                    this.updateConnectionStatus(true);
-                }
-            })
-            .catch(err => {
-                // Fallback to localStorage
-                try {
-                    localStorage.setItem('quantumScheduler', JSON.stringify(saveData));
-                    this.showSaveSuccess(saveBtn, originalText, '✅ 로컬 저장됨');
-                    this.updateConnectionStatus(false);
-                } catch (e) {
-                    alert('저장 실패: ' + e.message);
-                }
-            });
-    },
-
-
-    // Load schedule from server (or localStorage as fallback)
-    loadFromLocal() {
-        fetch('/api/schedule')
-            .then(res => res.json())
-            .then(saveData => {
-                if (saveData.data && Array.isArray(saveData.data)) {
-                    this.applyLoadedData(saveData);
-                    this.lastServerSaveDate = saveData.saveDate;
-                    this.updateConnectionStatus(true);
-                    console.log('Schedule loaded from server');
-                } else {
-                    this.loadFromLocalStorage();
-                }
-            })
-            .catch(err => {
-                console.log('Server unavailable, trying localStorage');
-                this.loadFromLocalStorage();
-                this.updateConnectionStatus(false);
-            });
-    },
-
-    // Auto-sync function
-
-    async syncWithServer() {
-        try {
-            const res = await fetch('/api/schedule');
-            const serverData = await res.json();
-
-            if (serverData.saveDate && (!this.lastServerSaveDate || serverData.saveDate > this.lastServerSaveDate)) {
-                console.log('New data found on server, auto-updating...');
-                this.applyLoadedData(serverData);
-                this.lastServerSaveDate = serverData.saveDate;
-                this.showSyncFlash();
-            }
-            this.updateConnectionStatus(true);
-        } catch (e) {
-            this.updateConnectionStatus(false);
-        }
-    },
-
-
     updateConnectionStatus(connected) {
         const dot = document.getElementById('connectionDot');
         if (dot) {
             dot.classList.remove('connected', 'disconnected');
             dot.classList.add(connected ? 'connected' : 'disconnected');
             dot.title = connected ? '서버 연결됨' : '오프라인';
-        }
-    },
-
-
-    showSyncFlash() {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) {
-            sidebar.classList.add('sync-flash');
-            setTimeout(() => sidebar.classList.remove('sync-flash'), 1000);
-        }
-    },
-
-
-    loadFromLocalStorage() {
-        try {
-            const saved = localStorage.getItem('quantumScheduler');
-            if (!saved) return;
-
-            const saveData = JSON.parse(saved);
-            if (saveData.data && Array.isArray(saveData.data)) {
-                this.applyLoadedData(saveData);
-                console.log('Schedule loaded from localStorage');
-            }
-        } catch (err) {
-            console.warn('Failed to load from localStorage:', err.message);
         }
     },
 
@@ -811,21 +443,6 @@ Object.assign(Scheduler.prototype, {
 
         this.renderTasks();
         this.updateUndoRedoButtons();
-    },
-
-
-    showSaveSuccess(btn, originalText, message) {
-        if (!btn) return;
-        // Check if message is the default emoji version, if so replace with icon
-        const displayMsg = message.includes('✅') ?
-            `<span class="material-icons" style="font-size:16px; vertical-align:middle; margin-right:4px;">check_circle</span> ${message.replace('✅ ', '')}` : message;
-
-        btn.innerHTML = displayMsg;
-        btn.style.background = 'rgba(70, 194, 142, 0.5)';
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = '';
-        }, 1500);
     },
 
     async deleteAllData() {

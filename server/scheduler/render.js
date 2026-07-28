@@ -406,43 +406,6 @@ Object.assign(Scheduler.prototype, {
         this.els.eventLayer.appendChild(marker);
     },
 
-    // Edit event label in-place
-
-    editEventLabel(nodeId, segmentId, labelEl) {
-        const node = this.findNode(nodeId);
-        if (!node) return;
-        const seg = node.segments.find(s => s.id === segmentId);
-        if (!seg) return;
-
-        const currentLabel = seg.label || '이벤트';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentLabel;
-        input.className = 'inline-edit-input';
-        input.style.cssText = 'width:80px;background:rgba(0,0,0,0.7);color:white;border:1px solid #ef4444;padding:2px 4px;border-radius:4px;font-size:10px;';
-
-        labelEl.replaceWith(input);
-        input.focus();
-        input.select();
-
-        let saved = false;
-        const save = () => {
-            if (saved) return;
-            saved = true;
-            this.saveState();
-            seg.label = input.value.trim() || '이벤트';
-            this.renderTasks();
-        };
-
-        input.onblur = save;
-        input.onkeydown = (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); input.onblur = null; save(); }
-            if (e.key === 'Escape') { input.onblur = null; this.renderTasks(); }
-        };
-    },
-
-
     createCollapsedChildElement(parentNode, segment, rowIndex) {
         const bar = document.createElement('div');
         bar.className = 'task-bar collapsed-child';

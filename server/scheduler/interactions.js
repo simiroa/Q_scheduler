@@ -50,8 +50,7 @@ Object.assign(Scheduler.prototype, {
                 this.saveState();
 
                 const newId = Date.now();
-                const colors = ['#5e6ad2', '#26b5ce', '#46c28e', '#f59e0b', '#ef4444', '#8b5cf6'];
-                const randColor = colors[Math.floor(Math.random() * colors.length)];
+                const randColor = this.taskColors[Math.floor(Math.random() * this.taskColors.length)];
 
                 const newTask = {
                     id: newId,
@@ -323,11 +322,6 @@ Object.assign(Scheduler.prototype, {
             if (this.isDescendant(child, childId)) return true;
         }
         return false;
-    },
-
-    getVisibleRowIndexById(taskId) {
-        if (!this.visibleRows) return -1;
-        return this.visibleRows.findIndex(row => row.id == taskId);
     },
 
     findSegmentOwner(segId, nodes = this.data) {
@@ -779,16 +773,6 @@ Object.assign(Scheduler.prototype, {
         }, true); // <- capture: true to run first
     },
 
-
-    rectsIntersect(r1, r2) {
-        // Standard rectangle intersection with 5px buffer for forgiving selection
-        // Returns true if any part of r2 overlaps or nearly touches r1
-        const buffer = 5;
-        return !(r2.left > r1.right + buffer ||
-            r2.right < r1.left - buffer ||
-            r2.top > r1.bottom + buffer ||
-            r2.bottom < r1.top - buffer);
-    },
 
     // --- Zoom ---
 
@@ -1321,52 +1305,6 @@ Object.assign(Scheduler.prototype, {
         this.renderTasks();
     },
 
-    // Generate individual overlay elements for each weekend/holiday day
-    // This approach avoids CSS gradient limitations for long durations
-
-    setupInteractions() {
-        document.addEventListener('mousemove', (e) => this.onMouseMove(e));
-        document.addEventListener('mouseup', (e) => this.onMouseUp(e));
-
-        // Sync header scroll and update floating text
-        this.els.timelineBody.addEventListener('scroll', () => {
-            this.els.headerScrollContent.scrollLeft = this.els.timelineBody.scrollLeft;
-            this.updateFloatingLabels();
-        });
-
-        this.els.addBtn.addEventListener('click', () => {
-            const colors = ['#5e6ad2', '#26b5ce', '#46c28e', '#f59e0b', '#ef4444', '#8b5cf6'];
-            const randColor = colors[Math.floor(Math.random() * colors.length)];
-            this.data.push({
-                id: Date.now(), name: "New Project", expanded: true, color: randColor,
-                segments: [{ id: `s${Date.now()}`, startOffset: 30, duration: 5, includeWeekends: true }],
-                children: []
-            });
-            this.renderTasks();
-        });
-
-        this.els.timelineRows.addEventListener('dblclick', (e) => {
-            if (e.target.classList.contains('timeline-row')) {
-                const rect = this.els.timelineBody.getBoundingClientRect();
-                const clickX = e.clientX + this.els.timelineBody.scrollLeft - rect.left;
-                const dayIndex = Math.floor(clickX / this.config.cellWidth);
-                const projId = e.target.dataset.id;
-                const node = this.findNode(projId);
-                if (node) {
-                    node.segments.push({
-                        id: `s${projId}-${Date.now()}`,
-                        startOffset: dayIndex,
-                        duration: 3,
-                        includeWeekends: true
-                    });
-                    this.mergeSegments(node);
-                    this.renderTasks();
-                }
-            }
-        });
-    },
-
-
     setupScrollSync() {
         let isSyncingSidebar = false;
         let isSyncingTimeline = false;
@@ -1446,67 +1384,6 @@ Object.assign(Scheduler.prototype, {
         this.selectedSegments.clear(); // Clear segment selection when selecting tasks
         this.renderTasks();
     },
-
-    // In-place edit for project/task names (sidebar)
-
-    // In-place edit for segment-specific names (graph bar labels - independent from task name)
-    editSegmentName(nodeId, segmentId, labelEl) {
-        const node = this.findNode(nodeId);
-        if (!node) return;
-        const seg = node.segments.find(s => s.id === segmentId);
-        if (!seg) return;
-
-        // Use segment.label or default to node.name
-        const currentName = seg.label || node.name;
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentName;
-        input.className = 'inline-edit-input';
-        input.style.cssText = 'width:auto;max-width:150px;background:rgba(0,0,0,0.5);color:white;border:1px solid rgba(255,255,255,0.3);padding:2px 6px;border-radius:4px;font-size:11px;';
-
-        labelEl.replaceWith(input);
-        input.focus();
-        input.select();
-
-        let saved = false;
-        const save = () => {
-            if (saved) return;
-            saved = true;
-            this.saveState();
-            seg.label = input.value.trim() || node.name;
-            this.renderTasks();
-        };
-
-        input.onblur = save;
-        input.onkeydown = (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); input.onblur = null; save(); }
-            if (e.key === 'Escape') { input.onblur = null; this.renderTasks(); }
-        };
-    },
-
-
-    deleteTask(taskId) {
-        // Keep for internal recursive calls or explicit single delete
-        const parentInfo = this.findNodeParent(taskId);
-        const deleteFromArray = (arr) => {
-            for (let i = 0; i < arr.length; i++) {
-                if (arr[i].id == taskId) {
-                    arr.splice(i, 1);
-                    return true;
-                }
-                if (arr[i].children && deleteFromArray(arr[i].children)) {
-                    return true;
-                }
-            }
-            return false;
-        };
-        const deleted = deleteFromArray(this.data);
-        if (deleted && parentInfo?.parent) {
-            this.updateAncestorSchedules(parentInfo.parent);
-        }
-    },
-
 
     deleteSelectedTasks() {
         // Create a copy of IDs to avoid modification issues during iteration

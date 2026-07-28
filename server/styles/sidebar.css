@@ -8,12 +8,6 @@
     min-height: 0;
 }
 
-.sidebar-tools {
-    padding: 12px 24px 10px;
-    border-bottom: 1px solid var(--border-subtle);
-    background: var(--bg-sidebar);
-}
-
 .sidebar-footer {
     padding: 0;
     /* Remove padding from container */
@@ -107,12 +101,6 @@ body.dark-theme .list-management {
     border-left: 1px solid var(--border-subtle);
 }
 
-.list-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    padding: 0 4px;
-}
-
 .panel-title {
     font-size: 10px;
     font-weight: 700;
@@ -140,17 +128,6 @@ body.dark-theme .list-management {
 .status-dot.saving {
     background: #5e6ad2;
     animation: pulse 0.5s infinite;
-}
-
-.project-control-bar {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    box-shadow: var(--shadow-sm);
 }
 
 .icon-btn {
@@ -207,14 +184,6 @@ body.dark-theme .list-management {
 .icon-btn.disabled {
     pointer-events: none;
     opacity: 0.3;
-}
-
-.select-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    padding: 0 4px;
-    min-width: 0;
 }
 
 .project-dropdown {
@@ -289,32 +258,6 @@ body.dark-theme .list-management {
     text-transform: uppercase;
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
-}
-
-.today-link {
-    height: 26px;
-    /* Slightly taller */
-    padding: 0 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(94, 106, 210, 0.2);
-    /* Subtle border */
-    background: rgba(94, 106, 210, 0.05);
-    color: var(--accent-primary);
-    font-size: 12px;
-    /* Larger font */
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.2px;
-    flex-shrink: 0;
-    transition: all 0.2s;
-}
-
-.today-link:hover {
-    background: rgba(94, 106, 210, 0.15);
-    border-color: rgba(94, 106, 210, 0.4);
-    transform: translateY(-1px);
-    /* Micro interaction */
-    box-shadow: 0 2px 4px rgba(94, 106, 210, 0.1);
 }
 
 .sidebar-scroll-area {
@@ -441,78 +384,6 @@ body.dark-theme .list-management {
     pointer-events: none;
     border-color: transparent;
     background: rgba(255, 255, 255, 0.05);
-}
-
-.share-buttons {
-    display: flex;
-    gap: 8px;
-    padding: 10px 24px;
-    border-top: 1px solid var(--border-subtle);
-    margin-top: 10px;
-}
-
-.share-btn {
-    flex: 1;
-    padding: 8px 12px;
-    background: rgba(94, 106, 210, 0.15);
-    border: 1px solid rgba(94, 106, 210, 0.3);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.share-btn:hover {
-    background: rgba(94, 106, 210, 0.3);
-    color: white;
-    border-color: var(--accent-primary);
-}
-
-.save-btn {
-    background: rgba(70, 194, 142, 0.2);
-    border-color: rgba(70, 194, 142, 0.4);
-}
-
-.save-btn:hover {
-    background: rgba(70, 194, 142, 0.4);
-    border-color: #46c28e;
-}
-
-.new-btn {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: rgba(139, 92, 246, 0.4);
-}
-
-.new-btn:hover {
-    background: rgba(139, 92, 246, 0.4);
-    border-color: #8b5cf6;
-}
-
-.folder-btn {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: rgba(245, 158, 11, 0.4);
-}
-
-.folder-btn:hover {
-    background: rgba(245, 158, 11, 0.4);
-    border-color: #f59e0b;
-}
-
-.folder-btn.selected {
-    background: rgba(70, 194, 142, 0.3);
-    border-color: #46c28e;
-}
-
-.load-btn {
-    background: rgba(38, 181, 206, 0.2);
-    border-color: rgba(38, 181, 206, 0.4);
-}
-
-.load-btn:hover {
-    background: rgba(38, 181, 206, 0.4);
-    border-color: #26b5ce;
 }
 
 /* --- Drag and Drop Hierarchy --- */

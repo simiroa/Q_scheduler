@@ -13,7 +13,6 @@ import pystray
 from PIL import Image, ImageDraw
 from pystray import MenuItem as item
 import ctypes
-from ctypes import wintypes
 
 # 단일 실행을 위한 상수
 ERROR_ALREADY_EXISTS = 183
@@ -223,7 +222,6 @@ if __name__ == '__main__':
             
         sys.exit(0)
 
-    # --- 트레이 앱 모드 (기본) ---
     # --- 트레이 앱 모드 (기본) ---
     # 단일 실행 보장 로직
     mutex_name = "QuantumScheduler_TrayApp_Mutex_7A5B1C3D"

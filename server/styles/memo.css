@@ -1,26 +1,3 @@
-.memo-input {
-    width: 100%;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
-    min-height: 100px;
-}
-
-.memo-input:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
-}
-
-.memo-input::placeholder {
-    color: var(--text-muted);
-}
-
 .memo-indicator {
     position: absolute;
     right: 36px;
@@ -33,29 +10,6 @@
 
 .memo-indicator:hover {
     opacity: 1;
-}
-
-.memo-tooltip {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-menu);
-    border: 1px solid var(--border-hover);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: var(--text-primary);
-    white-space: pre-wrap;
-    max-width: 250px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    z-index: 3000;
-    display: none;
-}
-
-.task-bar:hover .memo-tooltip,
-.event-marker:hover .memo-tooltip {
-    display: block;
 }
 
 .memo-panel {

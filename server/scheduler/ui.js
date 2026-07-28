@@ -238,7 +238,6 @@ Object.assign(Scheduler.prototype, {
                 display.innerHTML = `<span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px; color:#5e6ad2;">event</span> ${days}일 (${kStart} ~ ${kEnd})`;
                 display.style.color = '#666';
 
-                document.getElementById('editDurationInput').value = days;
                 document.getElementById('editSaveBtn').disabled = false;
             }
         };
@@ -512,7 +511,6 @@ Object.assign(Scheduler.prototype, {
         this.memoPanelTarget = { nodeId: this.ctxState.targetId, segId: this.ctxState.targetSegId };
 
         // Update panel content
-        const displayName = seg.label || node.name;
         this.els.memoTaskName.innerHTML = '<span class="material-icons" style="font-size:18px; vertical-align:middle; margin-right:6px; color:#5e6ad2;">description</span>' + node.name;
         this.els.memoPanelInput.value = seg.memo || '';
 
@@ -542,12 +540,8 @@ Object.assign(Scheduler.prototype, {
     },
 
 
-    formatDateForInput(date) {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    },
+    // <input type="date">와 공휴일 키는 같은 로컬 YYYY-MM-DD 형식을 쓴다
+    formatDateForInput(date) { return this.getDateKey(date); },
 
 
     formatDateKorean(date) {
@@ -771,7 +765,7 @@ Object.assign(Scheduler.prototype, {
 
         if (addedCount > 0) {
             this.saveState();
-            this.renderTimeline();
+            this.renderTimelineStructure();
 
             // Visual Feedback on Button
             const btn = document.getElementById('settingFetchHolidays');
@@ -794,6 +788,16 @@ Object.assign(Scheduler.prototype, {
     exportToICS() {
         let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Quantum Scheduler//KR\nCALSCALE:GREGORIAN\n";
 
+        // RFC 5545: 백슬래시/세미콜론/쉼표는 이스케이프, 줄바꿈은 \n 리터럴로
+        const escapeICS = (text) => String(text)
+            .replace(/\\/g, '\\\\')
+            .replace(/;/g, '\\;')
+            .replace(/,/g, '\\,')
+            .replace(/\r?\n/g, '\\n');
+
+        // 로컬 날짜 기준 YYYYMMDD (toISOString()은 UTC라 하루 밀린다)
+        const formatDate = (date) => this.getDateKey(date).replace(/-/g, '');
+
         const processNode = (node) => {
             if (node.segments) {
                 node.segments.forEach(seg => {
@@ -802,15 +806,11 @@ Object.assign(Scheduler.prototype, {
                     const end = new Date(start);
                     end.setDate(end.getDate() + seg.duration);
 
-                    const formatDate = (date) => {
-                        return date.toISOString().replace(/[-:]/g, '').split('T')[0];
-                    };
-
                     icsContent += "BEGIN:VEVENT\n";
                     icsContent += `DTSTART;VALUE=DATE:${formatDate(start)}\n`;
                     icsContent += `DTEND;VALUE=DATE:${formatDate(end)}\n`;
-                    icsContent += `SUMMARY:${node.text || 'Task'}\n`;
-                    icsContent += `DESCRIPTION:${node.memo || ''}\n`;
+                    icsContent += `SUMMARY:${escapeICS(seg.label || node.name || 'Task')}\n`;
+                    icsContent += `DESCRIPTION:${escapeICS(seg.memo || '')}\n`;
                     icsContent += "END:VEVENT\n";
                 });
             }
@@ -826,7 +826,7 @@ Object.assign(Scheduler.prototype, {
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `schedule_${new Date().toISOString().slice(0, 10)}.ics`;
+        link.download = `schedule_${this.getDateKey(new Date())}.ics`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -852,7 +852,10 @@ Object.assign(Scheduler.prototype, {
                 useCORS: true
             });
             const link = document.createElement('a');
-            link.download = `screenshot_${new Date().toISOString().slice(0, 19).replace(/[:]/g, '-')}.png`;
+            const now = new Date();
+            const hhmmss = [now.getHours(), now.getMinutes(), now.getSeconds()]
+                .map(n => String(n).padStart(2, '0')).join('-');
+            link.download = `screenshot_${this.getDateKey(now)}_${hhmmss}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         } catch (err) {
@@ -867,8 +870,6 @@ Object.assign(Scheduler.prototype, {
             if (checkbox) checkbox.checked = false;
             return;
         }
-
-        const vbsContent = `Set WshShell = CreateObject("WScript.Shell")\nWshShell.Run "python server.py", 0, False`;
 
         const batContent = `@echo off
 title Quantum Scheduler Startup Installer

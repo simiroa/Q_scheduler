@@ -8,12 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles/overlays.css">
-    <link rel="stylesheet" href="styles/memo.css">
+    <!-- overlays.css + memo.css come in via style.css @import; settings.css is not imported there -->
     <link rel="stylesheet" href="styles/settings.css">
     <link rel="icon" href="https://fav.farm/📅" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=8.28">
     <style>
         .version-tag {
             font-size: 10px;
@@ -35,7 +34,7 @@
         <aside class="sidebar">
             <div class="brand">
                 Quantum <span>Scheduler</span>
-                <span class="version-tag">v8.27</span>
+                <span class="version-tag">v8.28</span>
                 <span id="connectionDot" class="conn-dot" title="연결 확인 중..."></span>
             </div>
             <div class="task-list-header">
@@ -173,7 +172,6 @@
                     <div class="duration-display" id="editDurationDisplay">
                         <!-- JS Generated -->
                     </div>
-                    <input type="hidden" id="editDurationInput">
                 </div>
 
                 <div class="modal-group">
@@ -380,17 +378,9 @@
     </div>
 
     <!-- Hidden Color Inputs -->
-    <input type="color" id="colorPicker" style="display:none;">
     <input type="color" id="projectColorPicker" style="display:none;">
 
-    <!-- Context Menu Suppression (Inline) -->
-    <!-- Context Menu Suppression (Failsafe) -->
-    <script>
-        window.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-        }, { capture: true });
-    </script>
-
+    <!-- contextmenu suppression is registered in core.js init() -->
     <script type="module" src="script.js?v=8.28"></script>
 </body>
 

@@ -49,12 +49,9 @@ export class Scheduler {
             taskMenu: document.getElementById('taskContextMenu'),
             sidebarMenu: document.getElementById('sidebarContextMenu'),
             headerMenu: document.getElementById('headerContextMenu'),
-            colorPicker: document.getElementById('colorPicker'),
             projectColorPicker: document.getElementById('projectColorPicker'),
             selectionBox: document.getElementById('selectionBox'),
             snapGuideLine: document.getElementById('snapGuideLine'),
-            memoModal: document.getElementById('memoModal'),
-            memoInput: document.getElementById('memoInput'),
             memoPanel: document.getElementById('memoPanel'),
             memoPanelInput: document.getElementById('memoPanelInput'),
             memoTaskName: document.getElementById('memoTaskName'),
@@ -103,8 +100,11 @@ export class Scheduler {
         this.redoStack = [];
         this.maxHistory = 50;
 
-        // Color Palette
+        // Color Palette (palette UI)
         this.palette = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7'];
+
+        // Colors randomly assigned to newly created tasks/projects
+        this.taskColors = ['#5e6ad2', '#26b5ce', '#46c28e', '#f59e0b', '#ef4444', '#8b5cf6'];
 
         this.init();
     }
@@ -117,6 +117,7 @@ export class Scheduler {
         this.startRealTimeUpdates();
         this.setupContextMenus();
         this.setupPanning();
+        this.setupDragSelection();
         this.setupZoom();
 
         // Prevent browser's default right-click menu on the app
@@ -173,6 +174,17 @@ export class Scheduler {
             this.els.sidebarScrollArea.addEventListener('drop', (e) => this.handleListDrop(e));
         }
 
+        // Project color dot -> native color picker -> apply to node + descendants
+        if (this.els.projectColorPicker) {
+            this.els.projectColorPicker.addEventListener('change', (e) => {
+                const node = this.findNode(this.ctxState.targetId);
+                if (!node) return;
+                this.saveState();
+                this.applyInheritedColor(node, e.target.value);
+                this.renderTasks();
+            });
+        }
+
         if (this.els.timelineBody && this.els.mouseGuideLine) {
             this.els.timelineBody.addEventListener('mousemove', (e) => this.updateMouseGuideLine(e));
             this.els.timelineBody.addEventListener('mouseleave', () => this.hideMouseGuideLine());
@@ -189,8 +201,7 @@ export class Scheduler {
                     return;
                 }
 
-                const colors = ['#5e6ad2', '#26b5ce', '#46c28e', '#f59e0b', '#ef4444', '#8b5cf6'];
-                const randColor = colors[Math.floor(Math.random() * colors.length)];
+                const randColor = this.taskColors[Math.floor(Math.random() * this.taskColors.length)];
                 this.saveState();
                 this.data.push({
                     id: Date.now(), name: "New Project", expanded: true, color: randColor,

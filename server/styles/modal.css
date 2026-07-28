@@ -77,14 +77,6 @@
     padding: 24px;
 }
 
-.confirm-message {
-    margin: 0;
-    color: #444;
-    font-size: 14px;
-    line-height: 1.5;
-    white-space: pre-line;
-}
-
 .modal-group {
     margin-bottom: 20px;
 }
@@ -185,13 +177,11 @@ body.dark-theme .color-option.selected {
     box-shadow: 0 0 0 2px var(--text-primary);
 }
 
-body.dark-theme .confirm-message,
 body.dark-theme .modal-group label {
     color: var(--text-secondary);
 }
 
-body.dark-theme .modal-input,
-body.dark-theme .modal-textarea {
+body.dark-theme .modal-input {
     background: var(--bg-secondary);
     border-color: var(--border-subtle);
     color: var(--text-primary);
@@ -216,12 +206,6 @@ body.dark-theme .duration-display {
     color: #999;
     pointer-events: none;
     font-size: 14px;
-}
-
-.duration-info {
-    margin-top: 6px;
-    font-size: 12px;
-    color: #888;
 }
 
 .color-picker-container {
@@ -309,29 +293,9 @@ body.dark-theme .duration-display {
     height: 0;
 }
 
-.readonly-field {
-    display: flex;
-    align-items: center;
-    background: #f8f9fa;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 10px 12px;
-    color: #333;
-}
-
-.field-icon {
-    color: #999;
-    margin-right: 10px;
-}
-
 #editDurationValue {
     font-weight: 500;
     flex: 1;
-}
-
-.field-sub {
-    font-size: 11px;
-    color: #999;
 }
 
 .modal-actions,

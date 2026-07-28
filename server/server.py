@@ -5,10 +5,8 @@ Quantum Scheduler - Shared Network Server
 """
 
 import http.server
-import socketserver
 import json
 import os
-import shutil
 import re
 import sys
 from urllib.parse import urlparse, unquote
@@ -42,16 +40,9 @@ if not os.path.exists(DATA_DIR):
     except OSError:
         pass 
 
-# Try multiple possible locations for static files
-# 1. Inside DATA_DIR (standard deployment)
-# 2. Parent folder's "스캐쥴러" subfolder (development)
-# 3. "web" subfolder
+# Static files live next to the data (standard deployment)
 STATIC_DIR = None
-possible_paths = [
-    DATA_DIR,  # Standard deployment: resources next to data
-    os.path.join(DATA_DIR, "..", "스캐쥴러"),  # Dev: ../스캐쥴러
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"),  # Dev: ./web relative to script
-]
+possible_paths = [DATA_DIR]
 
 # If frozen, we might have bundled static files in temp (MEI) but we want to serve them.
 if getattr(sys, 'frozen', False):
@@ -73,7 +64,6 @@ if STATIC_DIR is None:
     STATIC_DIR = DATA_DIR  # Fallback
 
 SCHEDULE_FILE = os.path.join(DATA_DIR, "schedule.json")
-BACKUP_FILE = os.path.join(DATA_DIR, "schedule.json.bak")
 
 # Project JSON files are stored in "list" subfolder
 LIST_DIR = os.path.join(DATA_DIR, "list")
@@ -91,11 +81,6 @@ class SchedulerHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         
-        # Health Check
-        if parsed.path == "/api/health":
-            self.send_json({"status": "ok", "time": datetime.now().isoformat()})
-            return
-        
         # API: List all projects
         if parsed.path == "/api/projects":
             self.list_projects()
@@ -106,12 +91,7 @@ class SchedulerHandler(http.server.SimpleHTTPRequestHandler):
             project_name = unquote(parsed.path.replace("/api/project/", ""))
             self.load_project(project_name)
             return
-            
-        # API: Load default schedule (legacy)
-        if parsed.path == "/api/schedule":
-            self.send_schedule()
-            return
-        
+
         # Redirect root to index.html
         if parsed.path == "/" or parsed.path == "":
             self.path = "/index.html"
@@ -128,11 +108,6 @@ class SchedulerHandler(http.server.SimpleHTTPRequestHandler):
             self.save_project(project_name)
             return
 
-        # API: Save default schedule (legacy)
-        if parsed.path == "/api/schedule":
-            self.save_schedule()
-            return
-        
         self.send_error(404, "Not Found")
 
     def do_DELETE(self):
@@ -162,65 +137,11 @@ class SchedulerHandler(http.server.SimpleHTTPRequestHandler):
         
         self.send_error(404, "Not Found")
 
-
-    
-    def do_OPTIONS(self):
-        """Handle CORS preflight"""
-        self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-
     def send_json(self, data):
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode("utf-8"))
-
-    def send_schedule(self):
-        """Load and send schedule.json"""
-        try:
-            if os.path.exists(SCHEDULE_FILE):
-                with open(SCHEDULE_FILE, "r", encoding="utf-8") as f:
-                    data = f.read()
-            else:
-                # Return default structure if file doesn't exist
-                data = json.dumps({"data": [], "holidays": [], "lastSaved": None})
-            
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(data.encode("utf-8"))
-            
-        except Exception as e:
-            self.send_error(500, str(e))
-    
-    def save_schedule(self):
-        """Save schedule to JSON file with backup"""
-        try:
-            content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length)
-            incoming_data = json.loads(body.decode("utf-8"))
-            
-            # Backup existing file before saving
-            if os.path.exists(SCHEDULE_FILE):
-                shutil.copy2(SCHEDULE_FILE, BACKUP_FILE)
-            
-            # Write new data
-            with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
-                json.dump(incoming_data, f, ensure_ascii=False, indent=2)
-            
-            save_time = incoming_data.get("saveDate") or datetime.now().isoformat()
-            
-            self.send_json({"success": True, "saved": save_time})
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Schedule updated and backed up.")
-            
-        except Exception as e:
-            print(f"Error saving schedule: {e}")
-            self.send_error(500, str(e))
 
     def list_projects(self):
         """List all project files in the data directory"""
@@ -255,7 +176,6 @@ class SchedulerHandler(http.server.SimpleHTTPRequestHandler):
                     data = f.read()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(data.encode("utf-8"))
             else:
@@ -367,47 +287,17 @@ def get_local_ip():
     except:
         return "127.0.0.1"
 
-# ... imports ...
-
 def setup_logging():
-    """Redirect stdout and stderr to a log file"""
+    """Redirect stdout/stderr to a log file when frozen (no console attached)."""
+    # Running as a script keeps the terminal output — redirecting it only hurts development.
     if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    log_path = os.path.join(base_dir, 'server_debug.log')
-    
-    # We use a custom stream that writes to file and original stdout (if available)
-    class MultiWriter:
-        def __init__(self, filename):
-            self.terminal = sys.stdout
-            self.log = open(filename, 'a', encoding='utf-8', buffering=1)
-        
-        def write(self, message):
-            try:
-                self.log.write(message)
-                if self.terminal:
-                    self.terminal.write(message)
-            except:
-                pass
-        
-        def flush(self):
-            try:
-                self.log.flush()
-                if self.terminal:
-                    self.terminal.flush()
-            except:
-                pass
-
-    sys.stdout = MultiWriter(log_path)
-    sys.stderr = sys.stdout
+        log_path = os.path.join(os.path.dirname(sys.executable), 'server_debug.log')
+        sys.stdout = sys.stderr = open(log_path, 'a', encoding='utf-8', buffering=1)
     print(f"[{datetime.now()}] Server Process Started")
     print(f"[{datetime.now()}] Python: {sys.version}")
 
 setup_logging()
 
-# ... existing code ...
 
 def run():
     try:
@@ -420,17 +310,6 @@ def run():
             os.chdir(DATA_DIR)
             print(f"[{datetime.now()}] Changed CWD to: {os.getcwd()}")
         
-        # Simple check for existing data in 스캐쥴러 folder if Network folder is empty
-        # This helps migration
-        try:
-            MIGRATION_SOURCE = os.path.join(DATA_DIR, "..", "스캐쥴러", "schedule.json")
-            if not os.path.exists(SCHEDULE_FILE) and os.path.exists(MIGRATION_SOURCE):
-                print(f"Found existing data at {MIGRATION_SOURCE}. Migrating...")
-                shutil.copy2(MIGRATION_SOURCE, SCHEDULE_FILE)
-        except Exception as e:
-            print(f"Migration error: {e}")
-
-        
         # Handler wrapping to catch request errors
         class LoggingHandler(SchedulerHandler):
             def log_message(self, format, *args):
@@ -438,11 +317,6 @@ def run():
             
             def log_error(self, format, *args):
                 print(f"[{datetime.now()}] ERROR: {format % args}")
-
-        # Use ThreadingMixIn to handle multiple requests concurrently
-        class ThreadedHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-            daemon_threads = True
-            allow_reuse_address = True
 
         # Try to find an available port
         httpd = None
@@ -452,7 +326,7 @@ def run():
         for try_port in range(PORT, PORT + 10):
             try:
                 print(f"[{datetime.now()}] Attempting to bind to port {try_port}...")
-                server_instance = ThreadedHTTPServer(("", try_port), LoggingHandler)
+                server_instance = http.server.ThreadingHTTPServer(("", try_port), LoggingHandler)
                 httpd = server_instance
                 bound_port = try_port
                 break
